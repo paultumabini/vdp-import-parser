@@ -1,0 +1,352 @@
+:root {
+  --clr-primary-1: #00bcd4;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: rgb(236 237 237);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  font-size: 0.85rem;
+  min-width: 600px;
+}
+
+/* Side Bar and content*/
+.wrapper {
+  display: flex;
+  height: 100vh;
+  position: absolute;
+  text-decoration: none;
+  transition: all 0.3s;
+  width: 100%;
+}
+
+.sidebar {
+  background: #000;
+  bottom: 0;
+  height: 100vh;
+  left: 0;
+  position: fixed;
+  top: 0;
+  transition: all 0.3s cubic-bezier(0.91, 0.05, 0, 0.88);
+  width: 80px;
+  z-index: 2;
+}
+
+.sidebar:after {
+  background: linear-gradient(135deg, rgb(34 30 39 / 90%), rgb(34 30 39 / 90%)),
+    url("../images/car_lhs.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  box-shadow: 2px 1px 10px -5px #000;
+  content: "";
+  display: block;
+  height: 100%;
+  opacity: 0.93;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  z-index: -1;
+}
+.sidebar .logo-img img {
+  left: 18px;
+  position: absolute;
+  top: 18px;
+  width: 42px;
+  z-index: 1;
+}
+
+.sidebar .logo div > a .logo-img {
+  float: left;
+}
+
+.sidebar .logo div > a > p {
+  font-size: 1.1rem;
+  padding: 10px 0;
+}
+
+.sidebar .logo:after {
+  background-color: hsla(0, 0%, 70.6%, 0.3);
+  content: "";
+  height: 1px;
+  position: absolute;
+  right: 15px;
+  width: calc(100% - 30px);
+}
+
+.sidebar ul li,
+.sidebar .logo div {
+  margin: 10px 15px;
+}
+
+.sidebar ul li a,
+.sidebar .logo div a {
+  border-radius: 3px;
+  display: block;
+  font-weight: 500;
+  padding: 5px 15px;
+  text-decoration: none;
+}
+
+.sidebar ul li > a i {
+  color: #fff;
+  float: left;
+  font-size: 1.2rem;
+  line-height: 30px;
+  margin-right: 15px;
+  text-align: center;
+}
+
+/* hide and show */
+.sidebar ul p,
+.sidebar div p {
+  color: #fff;
+  display: block;
+  font-size: 0.8rem;
+  height: auto;
+  line-height: 30px;
+  margin: 0;
+  opacity: 0;
+  position: relative;
+  text-transform: uppercase;
+  -webkit-transform: translate3d(-25px, 0, 0);
+  transform: translate3d(-25px, 0, 0);
+  transition: all 0.4s cubic-bezier(0.91, 0.05, 0, 0.88);
+  white-space: nowrap; /* suppresses line breaks */
+  overflow-x: hidden; /* hide line breaks */
+}
+
+.sidebar div p {
+  font-size: 16px;
+  text-transform: uppercase;
+}
+
+.sidebar ul.components {
+  margin-top: 2.5rem;
+}
+
+/* expand sidebar */
+.sidebar.expand {
+  margin-left: 0;
+  width: 260px;
+}
+
+.sidebar.expand ul p,
+.sidebar.expand div p {
+  opacity: 1;
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  /* white-space: normal;  */
+}
+
+/* sidebar active highlight */
+.sidebar ul li a.active {
+  background-color: var(--clr-primary-1);
+  transition: all 0.15s ease-in;
+}
+
+.sidebar ul li a.active p {
+  color: #fff;
+}
+
+.sidebar ul li > a.active i {
+  color: #fff;
+}
+
+/* sidebar hover */
+.sidebar > ul > li > :hover,
+.sidebar > .logo a:hover {
+  cursor: pointer;
+}
+
+.sidebar > ul > li > a:not([class^="active"]):hover {
+  background-color: hsla(0, 0%, 78%, 0.2);
+  box-shadow: none;
+  color: #3c4858;
+  transition: all 0.15s ease-in;
+}
+
+/* main panel */
+.main-panel {
+  width: 100%;
+}
+
+.site-header > .navbar > .container-fluid {
+  padding: 0 20px;
+}
+
+.site-header,
+.content {
+  float: right;
+  position: relative;
+  width: calc(100% - 80px);
+}
+
+.main-panel > .content {
+  padding: 30px 15px;
+}
+
+/* Nav notify and profile */
+.nav-section-profile {
+  color: #000;
+}
+
+.nav-bar-profile {
+  display: flex;
+  margin: 10px;
+}
+
+.nav-bar-profile > div {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+.nav-notify {
+  align-items: center;
+  background-color: #cfcfcf;
+  border-radius: 50%;
+  display: flex;
+  height: 40px;
+  justify-content: center;
+  text-align: center;
+  width: 40px;
+}
+
+.nav-notify > i {
+  font-size: 1.2rem;
+}
+
+.nav-profile .profile-logo {
+  background-color: #ddefda;
+  border: 1px solid #00e5ff;
+  border-radius: 50%;
+  cursor: pointer;
+  height: 40px;
+  overflow: hidden;
+  position: relative;
+  width: 40px;
+}
+
+.nav-profile .profile-logo img {
+  object-fit: cover;
+  width: 40px;
+}
+
+/* profile profile-menu */
+.nav-profile .profile-menu {
+  background: rgb(255, 255, 255);
+  border-radius: 0.3rem;
+  box-shadow: rgb(0 0 0 / 30%) 0px 0px 5px 1px;
+  opacity: 0;
+  padding: 1rem;
+  position: absolute;
+  right: 1rem;
+  transform: scale(0.5);
+  transform-origin: 100% 0%;
+  transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1.3);
+  visibility: hidden;
+  width: 120px;
+  z-index: 2;
+}
+
+.nav-profile .profile-menu::before {
+  background: #fff;
+  box-shadow: -2px -2px 1px 0px rgb(0 0 0 / 20%);
+  content: "";
+  height: 12px;
+  position: absolute;
+  right: 35px;
+  top: -5px;
+  transform: rotate(45deg);
+  width: 12px;
+}
+
+.nav-profile .profile-menu ul {
+  padding: 0;
+}
+
+.nav-profile .profile-menu p {
+  color: #1d4354;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1;
+  text-align: center;
+  width: 100%;
+}
+
+.nav-profile .profile-menu ul li {
+  align-items: center;
+  display: flex;
+  list-style: none;
+  padding: 0.5rem 0;
+}
+
+.nav-profile .profile-menu .profile-menu-divider {
+  border-top: 1px solid #e9ecef;
+  height: 0;
+  margin: 0.5rem 0;
+  overflow: hidden;
+}
+
+.nav-profile .profile-menu ul li a {
+  color: #1d4354;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.nav-profile .profile-menu ul li img {
+  margin-right: 10px;
+  max-width: 20px;
+  opacity: 0.5;
+}
+
+/* nav profile profile-menu show */
+.nav-profile .profile-logo + div > .profile-menu.show {
+  opacity: 1;
+  transform: scale(1) translateY(10px);
+  visibility: visible;
+}
+
+.profile-menu-extender {
+  background-color: rgb(0 0 0 / 0%);
+  height: 15px;
+  left: 0;
+  position: absolute;
+  top: -15px;
+  width: 100%;
+}
+
+.nav-profile .profile-menu ul li:hover * {
+  color: #0060a8;
+  opacity: 1;
+}
+
+.profile-menu ul li > a::before {
+  background-color: #00bcd4;
+  content: "";
+  display: block;
+  height: 2px;
+  left: 0;
+  position: relative;
+  top: 20px;
+  transition: width 0.2s ease-out;
+  width: 0;
+}
+
+.profile-menu ul li > a:hover::before {
+  width: 100%;
+}
+
+@media (max-width: 576px) {
+  .nav-profile .profile-menu {
+    left: 1rem;
+    right: unset;
+    transform-origin: 0% 0%;
+  }
+}

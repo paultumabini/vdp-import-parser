@@ -1,0 +1,85 @@
+.nav-link.active i.nav-icon {
+  color: #00ff00;
+}
+
+/* status */
+.status.active,
+.status.inactive,
+.status.pending,
+.status.failed {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  border-radius: 4px;
+}
+
+.status.active {
+  background: linear-gradient(310deg, #11a030 0%, #92e22c 100%);
+  padding: 0.2rem 0.77rem;
+}
+
+.status.inactive {
+  background: linear-gradient(310deg, #627594 0%, #a8b8d8 100%);
+  padding: 0.2rem 0.45rem;
+}
+
+.status.failed {
+  background: linear-gradient(310deg, #b82121 0%, #ff6666 100%);
+  padding: 0.2rem 0.77rem;
+}
+
+.status.pending {
+  background: linear-gradient(310deg, #c34f24 0%, #ff9670 100%);
+  padding: 0.2rem 0.45rem;
+}
+
+.status.up {
+  background: linear-gradient(310deg, #11a030 0%, #92e22c 100%);
+  padding: 0.2rem 1.6rem;
+  border-radius: 5px;
+  color: #fff;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.status.down {
+  background: linear-gradient(310deg, #b82121 0%, #ff6666 100%);
+  padding: 0.2rem 0.9rem;
+  border-radius: 5px;
+  color: #fff;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status.moved {
+  background: linear-gradient(310deg, #ab00c1 0%, #ff72ff 100%);
+  padding: 0.2rem 0.77rem;
+  border-radius: 5px;
+  color: #fff;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.status.dead {
+  background: linear-gradient(310deg, #627594 0%, #a8b8d8 100%);
+  padding: 0.2rem 1.1rem;
+  border-radius: 5px;
+  color: #fff;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* profile image */
+/* .user-panel .image {
+  position: relative;
+  margin-left: 0.8rem;
+  overflow: hidden;
+  height: 34px;
+  border-radius: 50%;
+  width: 34px;
+  padding-left: unset;
+}
+
+.user-panel .image img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+} */
