@@ -33,7 +33,7 @@ class Dealer(models.Model):
         ('DELETED', 'DELETED'),
     )
 
-    account = models.CharField(max_length=10, choices=ACCOUNT_STATUS)
+    account_status = models.CharField(max_length=10, choices=ACCOUNT_STATUS)
     dealer_id = models.IntegerField(primary_key=True)
     dealer_name = models.CharField(max_length=200, null=True)
     site_url = models.CharField(max_length=200, null=True)
@@ -74,6 +74,9 @@ class Dealer(models.Model):
     def __str__(self):
         # Solution for error msg: Error in admin: __str__ returned non-string (type NoneType)
         return str(self.dealer_name) or ''
+
+    class Meta:
+        ordering = ['account_status', 'dealer_name']
 
 
 class VdpImportSetup(models.Model):
@@ -206,3 +209,6 @@ class FtpConfig(models.Model):
     ftp_pass = models.CharField(max_length=50, null=True)
     ftp_port = models.IntegerField(null=True)
     date_created = models.DateTimeField(auto_now_add=True, null=True)
+
+    class Meta:
+        ordering = ('provider',)

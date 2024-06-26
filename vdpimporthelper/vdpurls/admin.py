@@ -8,6 +8,7 @@ from django_admin_listfilter_dropdown.filters import (
     RelatedDropdownFilter,
 )
 
+from .forms import FtpConfigForm
 from .models import Dealer, FtpConfig, Project, VdpImportSetup, VdpUrl, Webprovider
 
 
@@ -33,7 +34,7 @@ class DealerAdminView(admin.ModelAdmin):
     # )
     list_per_page = 10
     list_max_show_all = 500
-    list_filter = ('account', 'web_provider')
+    list_filter = ('account_status', 'web_provider')
 
     list_display = (
         'accnt_status',
@@ -46,7 +47,7 @@ class DealerAdminView(admin.ModelAdmin):
         'date_modified_fmt',
     )
     search_fields = [
-        'account',
+        'account_status',
         'dealer_id',
         'dealer_name',
         'site_url',
@@ -61,16 +62,16 @@ class DealerAdminView(admin.ModelAdmin):
         'dealer_name',
     )
 
-    @admin.display(description='Status', ordering='dealer__account')
+    @admin.display(description='Status', ordering='account_status')
     def accnt_status(self, obj):
-        if obj.account == 'ACTIVE':
+        if obj.account_status == 'ACTIVE':
             color = '#28a745'
-        elif obj.account == 'INACTIVE':
+        elif obj.account_status == 'INACTIVE':
             color = '#fea95e'
         else:
             color = '#ff0000'
         return format_html(
-            f'<strong> <p style="color:{color}">{obj.account}</p> </strong>'
+            f'<strong> <p style="color:{color}">{obj.account_status}</p> </strong>'
         )
 
     # format date
@@ -129,7 +130,7 @@ class VdpImportSetupAdminView(admin.ModelAdmin):
         'setup_status',
     )
     search_fields = [
-        'dealer__account',
+        'dealer__account_status',
         'dealer__dealer_id',  # search parent's attribute via ForeignKey: __prefix
         'dealer__dealer_name',
         'vdpurl_status',
@@ -143,14 +144,14 @@ class VdpImportSetupAdminView(admin.ModelAdmin):
     # function to color the account status text
     @admin.display(description='Status', ordering='dealer__account')
     def accnt_status(self, obj):
-        if obj.dealer.account == 'ACTIVE':
+        if obj.dealer.account_status == 'ACTIVE':
             color = '#28a745'
-        elif obj.dealer.account == 'INACTIVE':
+        elif obj.dealer.account_status == 'INACTIVE':
             color = '#fea95e'
         else:
             color = '#ff0000'
         return format_html(
-            f'<strong> <p style="color:{color}">{obj.dealer.account}</p> </strong>'
+            f'<strong> <p style="color:{color}">{obj.dealer.account_status}</p> </strong>'
         )
 
     accnt_status.allow_tags = True
@@ -197,7 +198,7 @@ class VdpImportSetupAdminView(admin.ModelAdmin):
 
         except Exception as e:
             return format_html(
-                f'<strong> <p style="color:#ff0000">Error {e}!</p> </strong>'
+                f'<strong> <p style="color:#ff0000">Error: {e}</p> </strong>'
             )
 
     # sort dealer's dropdown
@@ -255,6 +256,8 @@ class VdpUrlAdminView(admin.ModelAdmin):
 
 
 class VdpUrlConfigView(admin.ModelAdmin):
+
+    form = FtpConfigForm
     list_display = [
         'provider_name',
         'file',
@@ -273,7 +276,7 @@ class VdpUrlConfigView(admin.ModelAdmin):
         'feed_ids',
     ]
 
-    @admin.display(ordering='provider__name')
+    @admin.display(ordering='provider')
     def provider_name(self, obj):
         return f'{obj.provider.name}'
 
