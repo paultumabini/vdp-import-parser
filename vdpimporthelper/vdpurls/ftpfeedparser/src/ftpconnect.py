@@ -1,35 +1,50 @@
 from ftplib import FTP
 from io import BytesIO
 
-from src.creds import FtpCredsProvider
+from src.creds import FtpCredential
 
 
-class FtpConnect(FtpCredsProvider, FTP):
-    _ftp = FTP()
-
-    def __init__(self, feed_export):
-        super().__init__()
-        self._feed_export = feed_export
+class FtpConnect(FTP, FtpCredential):
+    def __init__(self, config_items):
+        super().__init__()  # Initialize the FTP class
+        FtpCredential.__init__(self)  # Initialize the FtpCredential
+        self._config_items = config_items
 
     @property
-    def feed_export(self):
-        return self._feed_export
+    def config_items(self):
+        return self._config_items
 
-    @feed_export.setter
-    def feed_export(self, feed_export):
-        return feed_export
+    @config_items.setter
+    def config_items(self, config_items):
+        return config_items
 
     def connect_ftp(self):
-        self.provide()
-        self._ftp.connect(self._site, self._port)
-        self._ftp.login(self._user, self._passwd)
-        print(self._ftp.getwelcome(), ":Logged in...")
+        """Connect to FTP server and yield file streams."""
+        try:
 
-        for item in self._feed_export:
-            r = BytesIO()
-            # self._ftp.set_pasv(False)
-            self._ftp.retrbinary(f'RETR /{item["file"]}', r.write)
-            r.seek(0)
-            yield [self._ftp, r, item]
+            for item in self.config_items:
+                self.provide_cred(
+                    item.get('ftp_host'),
+                    item.get('ftp_port'),
+                    item.get('ftp_user'),
+                    item.get('ftp_pass'),
+                )
+                self.connect(self.ftp_host, self.ftp_port)
+                self.login(self.ftp_user, self.ftp_pass)
+                print(
+                    self.getwelcome(),
+                    f"-> {item.get('provider_name').upper()} Logged in...",
+                )
 
-        self._ftp.quit()
+                r = BytesIO()
+                # self.set_pasv(False)
+                self.retrbinary(f'RETR /{item["file"]}', r.write)
+                r.seek(0)
+                yield [r, item]
+        except Exception as e:
+            print(
+                f"\nError MSG: {e}! \nCheck your connection and your VPN setup if applicable\n"
+            )
+
+        finally:
+            self.quit()

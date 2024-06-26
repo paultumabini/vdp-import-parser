@@ -1,9 +1,10 @@
 import re
-from functools import reduce
+from typing import Any, Dict, List, Union
 
-import numpy as np
 import pandas as pd
 import xmltodict
+
+# from functools import reduce
 
 
 class FeedHandler:
@@ -13,7 +14,9 @@ class FeedHandler:
     """
 
     @classmethod
-    def create_data_list(cls, *args, **kwargs):
+    def create_data_list(
+        cls, *args: Any, **kwargs: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         id, *vdp = kwargs.get('fields')
         dict_data_list = []
 
@@ -43,15 +46,26 @@ class FeedHandler:
                 dealer_name = data[0].get('dealer_name')
 
                 # filter out dealer_name key value pair from list
-                filtered_list = [{k: v for k, v in d.items() if k != 'dealer_name'} for d in data]
+                filtered_list = [
+                    {k: v for k, v in d.items() if k != 'dealer_name'} for d in data
+                ]
 
                 try:
                     # get() methods throws `MultipleObjectsReturned` error
-                    aim_id = kwargs['model'].objects.filter(vdpurl_feed_id__icontains=feed_id).first().dealer_id
+                    aim_id = (
+                        kwargs['model']
+                        .objects.filter(vdpurl_feed_id__icontains=feed_id)
+                        .first()
+                        .dealer_id
+                    )
                 except kwargs['model'].DoesNotExist:
                     aim_id = None
 
-                dealername = re.sub('[^A-Za-z0-9]+', '', dealer_name).lower() if dealer_name else None
+                dealername = (
+                    re.sub('[^A-Za-z0-9]+', '', dealer_name).lower()
+                    if dealer_name
+                    else None
+                )
 
                 dict_data_list.append(
                     [
@@ -67,7 +81,9 @@ class FeedHandler:
         return dict_data_list
 
     @classmethod
-    def parse_csv(cls, **kwargs):
+    def parse_csv(
+        cls, **kwargs: Dict[str, Union[str, pd.DataFrame]]
+    ) -> List[Dict[str, Any]]:
         # Create the pandas DataFrame
         try:
             # encoding types: ('cp1252', 'cp850','utf-8','utf8')
@@ -77,7 +93,9 @@ class FeedHandler:
             print('ERROR', err)
 
     @classmethod
-    def parse_xml_edealer(cls, **kwargs):
+    def parse_xml_edealer(
+        cls, **kwargs: Dict[str, Union[str, pd.DataFrame]]
+    ) -> List[Dict[str, Any]]:
         data = xmltodict.parse(kwargs['raw'].getvalue())
         dealers = data.get('Datafeed').get('Dealership')
 
@@ -99,11 +117,15 @@ class FeedHandler:
                         ]
 
                     if isinstance(vehicle_data, dict):
-                        xmldata.append([*instance_item(dealer, dealer_name, vehicle_data)])
+                        xmldata.append(
+                            [*instance_item(dealer, dealer_name, vehicle_data)]
+                        )
 
                     if isinstance(vehicle_data, list):
                         for v_data in vehicle_data:
-                            xmldata.append([*instance_item(dealer, dealer_name, v_data)])
+                            xmldata.append(
+                                [*instance_item(dealer, dealer_name, v_data)]
+                            )
 
         # Create the pandas DataFrame
         # arg1: two dimentional data lists --> [[],[],...], arg2: header's name
@@ -113,7 +135,9 @@ class FeedHandler:
 
     # Temporary individual functions:
     @classmethod
-    def parse_csv_insert_dname(cls, **kwargs):
+    def parse_csv_insert_dname(
+        cls, **kwargs: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         try:
             dframe = pd.read_csv(kwargs['raw'], encoding='cp850')
             # convert dframe data to list of dictionaries

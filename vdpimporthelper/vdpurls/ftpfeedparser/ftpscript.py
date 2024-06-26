@@ -2,8 +2,9 @@ import datetime
 import os
 import sys
 import time
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from typing import Any, Dict, List
 
 import django
 
@@ -17,17 +18,16 @@ sys.path.append(os.path.join(Path(__file__).parents[3], 'vdpimporthelper'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vdpimporthelper.settings'
 django.setup()
 
-from vdpurls.ftpfeedparser.src.configs import config, get_feed_ids
+from vdpurls.ftpfeedparser.src.configs import get_config
 from vdpurls.ftpfeedparser.src.feedhandler import FeedHandler
 from vdpurls.ftpfeedparser.src.ftpconnect import FtpConnect
 from vdpurls.ftpfeedparser.src.pipelines import ImportSourcePipeline
-from vdpurls.models import VdpImportSetup as VIS
-from vdpurls.models import VdpUrl
+from vdpurls.models import VdpImportSetup, VdpUrl
 
 
-def main():
+def main() -> None:
     """
-    Processes in order
+    Processes in order:
     - get ftp credentials
     - connect to ftp server
     - read and parse feed
@@ -37,8 +37,10 @@ def main():
     with ThreadPoolExecutor() as executor:
         # clear previous data and save new entries
         VdpUrl.objects.all().delete()
+        # get items from config list of dict
+        config_items = get_config()
 
-        for ftp, rf, feed in FtpConnect(config(mdl=VIS, ids=get_feed_ids)).connect_ftp():
+        for rf, feed in FtpConnect(config_items).connect_ftp():
             future = executor.submit(
                 getattr(
                     FeedHandler,
@@ -48,19 +50,17 @@ def main():
                 feed_ids=feed['feed_ids'],
                 fields=feed['target_fields'],
                 type=feed['type'],
-                model=VIS,
+                model=VdpImportSetup,
             )
-            res = future.result()
+            res_data: List[Dict[str, Any]] = future.result()
 
-            fd = ImportSourcePipeline
-            attrib = fd.evaluate_src(ftp, res)
-            fd.process_item(
-                VdpUrl,
-                VIS,
-                feed['provider'],
+            pipeline = ImportSourcePipeline
+            attrib = pipeline.evaluate_src(res_data)
+            pipeline.process_item(
+                feed['provider_name'],
                 **vars(attrib),
             )
-            fd.save_to_csv(feed['provider'], **vars(attrib))
+            pipeline.save_to_csv(feed['provider_name'], **vars(attrib))
 
             rf.close()
 

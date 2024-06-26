@@ -37,7 +37,13 @@ class Dealer(models.Model):
     dealer_id = models.IntegerField(primary_key=True)
     dealer_name = models.CharField(max_length=200, null=True)
     site_url = models.CharField(max_length=200, null=True)
-    web_provider = models.ForeignKey(Webprovider, on_delete=models.SET_NULL, related_name='web_provider', null=True, blank=True)
+    web_provider = models.ForeignKey(
+        Webprovider,
+        on_delete=models.SET_NULL,
+        related_name='web_provider',
+        null=True,
+        blank=True,
+    )
     account_manager = models.CharField(max_length=200, null=True, blank=True)
     fb_feed = models.IntegerField(null=True, blank=True)
     url_new_percent = models.IntegerField(null=True, blank=True)
@@ -45,14 +51,29 @@ class Dealer(models.Model):
     new_vehicle = models.IntegerField(null=True, blank=True)
     used_vehicle = models.IntegerField(null=True, blank=True)
 
-    project = models.ForeignKey(Project, on_delete=models.SET_NULL, related_name='projects', null=True, blank=True)
-    author = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='author', null=True, blank=True)
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.SET_NULL,
+        related_name='projects',
+        null=True,
+        blank=True,
+    )
     date_created = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     date_modified = models.DateTimeField(auto_now=True, null=True)
-    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='updated_by', null=True, blank=True)
+    author = models.ForeignKey(
+        User, on_delete=models.SET_NULL, related_name='author', null=True, blank=True
+    )
+    updated_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        related_name='updated_by',
+        null=True,
+        blank=True,
+    )
 
     def __str__(self):
-        return str(self.dealer_name) or ''  # Solution for error msg: Error in admin: __str__ returned non-string (type NoneType)
+        # Solution for error msg: Error in admin: __str__ returned non-string (type NoneType)
+        return str(self.dealer_name) or ''
 
 
 class VdpImportSetup(models.Model):
@@ -75,12 +96,27 @@ class VdpImportSetup(models.Model):
         ('None', 'None'),
     )
 
-    dealer = models.ForeignKey(Dealer, on_delete=models.CASCADE, related_name='vdpsetup', null=True)
-    vdpurl_status = models.CharField(max_length=50, choices=VDP_STATUS, default='pending')
-    vdpurl_feed_id = models.CharField(max_length=50, verbose_name='Feed ID', null=True, blank=True)
-    vdpurl_source_file = models.CharField(max_length=200, verbose_name='FTP Src File', null=True, blank=True)
-    vdpurl_main_feed_src = models.CharField(max_length=200, verbose_name='Main Feed Src', null=True, blank=True)
-    vdpurl_data_provider = models.CharField(max_length=50, choices=DATA_PROVIDER, null=True, blank=True)
+    dealer = models.ForeignKey(
+        Dealer, on_delete=models.CASCADE, related_name='vdpsetup', null=True
+    )
+    vdpurl_status = models.CharField(
+        max_length=50, choices=VDP_STATUS, default='pending'
+    )
+    vdpurl_feed_id = models.CharField(
+        max_length=50, verbose_name='Feed ID', null=True, blank=True
+    )
+    vdpurl_source_file = models.CharField(
+        max_length=200,
+        verbose_name='FTP Src File',  # automatically updated value in pipelines
+        null=True,
+        blank=True,
+    )
+    vdpurl_main_feed_src = models.CharField(
+        max_length=200, verbose_name='Main Feed Src', null=True, blank=True
+    )
+    vdpurl_data_provider = models.CharField(
+        max_length=50, choices=DATA_PROVIDER, null=True, blank=True
+    )
     vdpurl_date_setup = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     vdpurl_date_modified = models.DateTimeField(auto_now=True, null=True)
     note = models.TextField(null=True, blank=True)
@@ -96,11 +132,14 @@ class VdpImportSetup(models.Model):
     )
 
     def __str__(self):
-        return str(self.dealer) or ''  # Solution for error msg: Error in admin: __str__ returned non-string (type NoneType)
+        # Solution for error msg: Error in admin: __str__ returned non-string (type NoneType)
+        return str(self.dealer) or ''
 
 
 class VdpUrl(models.Model):
-    dealer = models.ForeignKey(Dealer, on_delete=models.CASCADE, related_name='vdpurl', null=True)
+    dealer = models.ForeignKey(
+        Dealer, on_delete=models.CASCADE, related_name='vdpurl', null=True
+    )
     dealer_vdpurl_feed_id = models.CharField(max_length=100, null=True, blank=True)
     vin = models.CharField(max_length=200, null=True, blank=True)
     vehicle_url = models.CharField(max_length=200, null=True, blank=True)
@@ -113,28 +152,57 @@ class VdpUrl(models.Model):
         # Auto-change  VdpImportSetup.setup
         try:
             self.date_created
-            objects = VdpImportSetup.objects.filter(dealer__dealer_id=self.dealer.dealer_id)
+            objects = VdpImportSetup.objects.filter(
+                dealer__dealer_id=self.dealer.dealer_id
+            )
             for object in objects:
                 object.setup = 'up'
                 object.save()
-        except:
-            pass  # self.dealer.dealer_id does not exist here!
+        except VdpImportSetup.DoesNotExist:
+            # self.dealer.dealer_id does not exist here!
+            print('The dealer does not exist with that ID')
 
         super(VdpUrl, self).save(*args, **kwargs)
 
 
-class Config(models.Model):
-    provider = models.CharField(max_length=200, null=True)
-    file = models.CharField(max_length=200, null=True)
-    type = models.CharField(max_length=200, null=True)
-    method = models.CharField(max_length=200, null=True)
-    feed_ids = models.CharField(
-        max_length=200,
+class FtpConfig(models.Model):
+
+    METHOD = (
+        ('parse_xml_edealer', 'parse_xml_edealer'),
+        ('parse_csv', 'parse_csv'),
+        ('parse_csv_insert_dname', 'parse_csv_insert_dname'),
+    )
+
+    provider = models.ForeignKey(
+        Webprovider,
+        on_delete=models.SET_NULL,
+        related_name='webprovider',
+        null=True,
+    )
+    file = models.CharField(max_length=60, null=True, blank=True)
+    type = models.CharField(
+        max_length=50,
+        choices=(
+            ('single', 'single'),
+            ('batch', 'batch'),
+        ),
+        null=True,
+        blank=True,
+    )
+    method = models.CharField(max_length=50, choices=METHOD, null=True, blank=True)
+    feed_ids = models.TextField(
         null=True,
         verbose_name='Feed Ids (comma-separted list values)',
+        blank=True,
     )
     target_fields = models.CharField(
-        max_length=200,
+        max_length=255,
         null=True,
         verbose_name='Target Fields (comma-separted list values)',
+        blank=True,
     )
+    ftp_host = models.CharField(max_length=50, null=True)
+    ftp_user = models.CharField(max_length=50, null=True)
+    ftp_pass = models.CharField(max_length=50, null=True)
+    ftp_port = models.IntegerField(null=True)
+    date_created = models.DateTimeField(auto_now_add=True, null=True)
