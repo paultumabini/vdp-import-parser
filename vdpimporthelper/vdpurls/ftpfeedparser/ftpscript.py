@@ -38,6 +38,7 @@ def main() -> None:
         # clear previous data and save new entries
         VdpUrl.objects.all().delete()
         # get items from config list of dict
+
         config_items = get_config()
 
         for rf, feed in FtpConnect(config_items).connect_ftp():

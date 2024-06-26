@@ -4,7 +4,7 @@ import os
 from ftplib import FTP
 from typing import Any, Dict, List
 
-from vdpurls.models import VdpImportSetup, VdpUrl
+from vdpurls.models import FtpConfig, VdpImportSetup, VdpUrl
 
 
 class ImportSourcePipeline:
@@ -64,8 +64,13 @@ class ImportSourcePipeline:
 
         file = f'VDP_URLS_{dealer_name}.csv'
 
-        with FTP('ftp.aim.autoverify.com') as ftp:
-            ftp.login('aim_vdp_urls', 'f49a77da-9b70-478b-b355-6718877e7003')
+        # sending to `ftp.aim.autoverify.com`
+        ftp_dest_cred = [
+            entry for entry in FtpConfig.objects.values() if entry['provider_id'] == 42
+        ][0]
+
+        with FTP(ftp_dest_cred['ftp_host']) as ftp:
+            ftp.login(ftp_dest_cred['ftp_user'], ftp_dest_cred['ftp_pass'])
             ftp.storbinary(f'STOR {file}', io.BytesIO(csvfile.getvalue().encode()))
 
     # Save to database (assuming VdpUrl model exists)
