@@ -63,14 +63,14 @@ class FtpCredential:
         self, ftp_host: str, ftp_port: int, ftp_user: str, ftp_pass: str
     ) -> None:
         """Provide credentials if not already set."""
-        if not self._ftp_host:
-            self._ftp_host = ftp_host
-        if not self._ftp_port:
-            self._ftp_port = ftp_port
-        if not self._ftp_user:
-            self._ftp_user = ftp_user
-        if not self._ftp_pass:
-            self._ftp_pass = ftp_pass
+        if not self.ftp_host:
+            self.ftp_host = ftp_host
+        if not self.ftp_port:
+            self.ftp_port = ftp_port
+        if not self.ftp_user:
+            self.ftp_user = ftp_user
+        if not self.ftp_pass:
+            self.ftp_pass = ftp_pass
 
 
 # os.environ.get('AIM_FTP_USER')

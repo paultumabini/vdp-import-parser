@@ -10,7 +10,7 @@ import xmltodict
 class FeedHandler:
     """
     Using `getattr(foo, 'bar')`, add @classmethod to avoid :
-    `TypeError: <class_method> missing 1 required positional argument: 'self'`
+    `TypeError: <class_method> missing 1 required positional argument: 'self'`.
     """
 
     @classmethod
@@ -20,17 +20,18 @@ class FeedHandler:
         id, *vdp = kwargs.get('fields')
         dict_data_list = []
 
-        """ list of dealer feed ids to create df when matched """
+        """List of dealer feed ids to create df when matched."""
         for feed_id in kwargs['feed_ids']:
             df = args[0]
 
-            # if batch file, define, otherwise, proceed renaming columns for single feed
+            """If batch file, define, otherwise, proceed renaming columns for single feed."""
             if kwargs['type'] == 'batch':
                 mask = df[id] == feed_id
                 df = df[mask]
 
-            # select cols for dealer_names,vin & vdp urls
-            # rename cols names for consistency
+            """Select cols for dealer_names,vin & vdp urls
+               Rename cols names for consistency.
+            """
             vdp_urls = df[vdp].rename(
                 columns={
                     f'{vdp[0]}': 'dealer_name',
@@ -45,13 +46,13 @@ class FeedHandler:
             if bool(data):
                 dealer_name = data[0].get('dealer_name')
 
-                # filter out dealer_name key value pair from list
+                """Filter out dealer_name key value pair from list"""
                 filtered_list = [
                     {k: v for k, v in d.items() if k != 'dealer_name'} for d in data
                 ]
 
+                """`get()` methods throws `MultipleObjectsReturned` error."""
                 try:
-                    # get() methods throws `MultipleObjectsReturned` error
                     aim_id = (
                         kwargs['model']
                         .objects.filter(vdpurl_feed_id__icontains=feed_id)
@@ -84,7 +85,7 @@ class FeedHandler:
     def parse_csv(
         cls, **kwargs: Dict[str, Union[str, pd.DataFrame]]
     ) -> List[Dict[str, Any]]:
-        # Create the pandas DataFrame
+        """Create the pandas DataFrame."""
         try:
             # encoding types: ('cp1252', 'cp850','utf-8','utf8')
             dframe = pd.read_csv(kwargs['raw'], encoding='cp850')
@@ -106,7 +107,7 @@ class FeedHandler:
                     dealer_name = dealer.get('Dealer_Name')
                     vehicle_data = dealer.get('Inventory', {}).get('Vehicle', {})
 
-                    """ evaluate vdp data of dict or list """
+                    """Evaluate vdp data of dict or list."""
 
                     def instance_item(d, d_name, v_data):
                         return [
@@ -127,8 +128,9 @@ class FeedHandler:
                                 [*instance_item(dealer, dealer_name, v_data)]
                             )
 
-        # Create the pandas DataFrame
-        # arg1: two dimentional data lists --> [[],[],...], arg2: header's name
+        """Create the pandas DataFrame
+           arg1: two dimentional data lists --> [[],[],...], arg2: header's name.
+        """
         dframe = pd.DataFrame(xmldata, columns=kwargs['fields'])
 
         return cls.create_data_list(dframe, **kwargs)
@@ -140,7 +142,7 @@ class FeedHandler:
     ) -> List[Dict[str, Any]]:
         try:
             dframe = pd.read_csv(kwargs['raw'], encoding='cp850')
-            # convert dframe data to list of dictionaries
+            """Convert dframe data to list of dictionaries."""
             dict_df = dframe.to_dict('records')
 
             list_data = [
@@ -158,7 +160,7 @@ class FeedHandler:
                 for data in dict_df
             ]
 
-            # convert list of dictionaries to dataframe
+            """Convert list of dictionaries to dataframe."""
             df_data = pd.DataFrame(list_data)
 
             return cls.create_data_list(df_data, **kwargs)

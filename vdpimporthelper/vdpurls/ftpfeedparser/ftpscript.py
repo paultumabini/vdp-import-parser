@@ -32,7 +32,7 @@ def main() -> None:
     - connect to ftp server
     - read and parse feed
     - filter and clean data
-    - create vdp_urls import source
+    - create vdp_urls import source.
     """
     with ThreadPoolExecutor() as executor:
         # clear previous data and save new entries

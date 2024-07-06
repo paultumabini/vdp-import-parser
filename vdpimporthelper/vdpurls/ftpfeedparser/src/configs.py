@@ -7,15 +7,15 @@ def get_config():
     for cvs files:
     - `target_fields` set as the actual column/ header names of the files
     -  for single feed `dealer_id` or `id` is optional, put and empty string("")if not available
-    - `target_fields` and `feed_ids` are both comma-separated value, regardless if it's empty or not
+    - `target_fields` and `feed_ids` are both comma-separated value, regardless if it's empty or not.
     """
-    # Get all field names from FtpConfig model
+    # Get all field names from FtpConfig model.
     ftp_config_fields = [field.name for field in FtpConfig._meta.get_fields()]
 
-    # Add the annotated provider_name field
+    # Append the annotated provider_name field.
     ftp_config_fields.append('provider_name')
 
-    # Query the FtpConfig model, annotate with provider_name, and include all fields
+    # Query the FtpConfig model, annotate with provider_name, and include all fields.
     ftp_configs = FtpConfig.objects.annotate(provider_name=F('provider__name')).values(
         *ftp_config_fields
     )
@@ -30,7 +30,7 @@ def get_config():
         }
         for obj in ftp_configs
     ]
-    # filter out  'autoverify' that is used for destination ftp address
+    # Filter out  'autoverify' that is used for destination ftp address.
     filtered_data = [
         entry for entry in ftp_config_data if entry['provider_name'] != 'autoverify'
     ]
