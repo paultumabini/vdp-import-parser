@@ -35,10 +35,9 @@ def main() -> None:
     - create vdp_urls import source.
     """
     with ThreadPoolExecutor() as executor:
-        # clear previous data and save new entries
+        # Clear previous data and save new entries.
         VdpUrl.objects.all().delete()
-        # get items from config list of dict
-
+        # Get items from config list of dict.
         config_items = get_config()
 
         for rf, feed in FtpConnect(config_items).connect_ftp():
