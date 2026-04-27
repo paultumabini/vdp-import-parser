@@ -1,4 +1,5 @@
 import datetime
+import logging
 import os
 import sys
 import time
@@ -8,13 +9,12 @@ from typing import Any, Dict, List
 
 import django
 
-# time start
+logger = logging.getLogger(__name__)
+
 start = time.perf_counter()
-print(f'Start: {datetime.datetime.now()}')
+logger.info('Start: %s', datetime.datetime.now())
 
-# append path for the module & django settings
 sys.path.append(os.path.join(Path(__file__).parents[3], 'vdpimporthelper'))
-
 os.environ['DJANGO_SETTINGS_MODULE'] = 'vdpimporthelper.settings'
 django.setup()
 
@@ -26,27 +26,17 @@ from vdpurls.models import VdpImportSetup, VdpUrl
 
 
 def main() -> None:
-    """
-    Processes in order:
-    - get ftp credentials
-    - connect to ftp server
-    - read and parse feed
-    - filter and clean data
-    - create vdp_urls import source.
-    """
+    """Fetch feeds, normalize payloads, upload and persist VDP URLs."""
     with ThreadPoolExecutor() as executor:
-        # Clear previous data and save new entries.
+        # Each run starts with a clean VDP URL snapshot.
         VdpUrl.objects.all().delete()
-        # Get items from config list of dict.
         config_items = get_config()
+        connector = FtpConnect(config_items)
 
-        for rf, feed in FtpConnect(config_items).connect_ftp():
+        for raw_file, feed in connector.connect_ftp():
             future = executor.submit(
-                getattr(
-                    FeedHandler,
-                    feed['method'],
-                ),
-                raw=rf,
+                getattr(FeedHandler, feed['method']),
+                raw=raw_file,
                 feed_ids=feed['feed_ids'],
                 fields=feed['target_fields'],
                 type=feed['type'],
@@ -56,19 +46,33 @@ def main() -> None:
 
             pipeline = ImportSourcePipeline
             attrib = pipeline.evaluate_src(res_data)
-            pipeline.process_item(
-                feed['provider_name'],
-                **vars(attrib),
-            )
+            pipeline.process_item(feed['provider_name'], **vars(attrib))
             pipeline.save_to_csv(feed['provider_name'], **vars(attrib))
+            raw_file.close()
 
-            rf.close()
+        stats = connector.stats
+        logger.info(
+            'FTP run summary: attempted=%s connected=%s skipped_network=%s failed=%s',
+            stats['attempted'],
+            stats['connected'],
+            stats['network_skipped'],
+            stats['failed'],
+        )
+        logger.info(
+            'FTP providers connected=%s skipped_network=%s failed=%s',
+            sorted(set(stats['connected_providers'])),
+            sorted(set(stats['network_skipped_providers'])),
+            sorted(set(stats['failed_providers'])),
+        )
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s %(levelname)s %(name)s: %(message)s',
+    )
     main()
 
-# time end
 finish = time.perf_counter()
-print(f'End: {datetime.datetime.now()}')
-print(f'Finished in {round(finish - start,2)} second(s)')
+logger.info('End: %s', datetime.datetime.now())
+logger.info('Finished in %s second(s)', round(finish - start, 2))

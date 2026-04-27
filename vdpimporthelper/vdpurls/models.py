@@ -1,6 +1,5 @@
 from django.contrib.auth.models import User
 from django.db import models
-from django.urls import reverse
 
 
 class Project(models.Model):
@@ -106,7 +105,10 @@ class VdpImportSetup(models.Model):
         max_length=50, choices=VDP_STATUS, default='pending'
     )
     vdpurl_feed_id = models.CharField(
-        max_length=50, verbose_name='Feed ID', null=True, blank=True
+        max_length=50,
+        verbose_name='Feed ID (Make sure to add this to FtpConfig)',
+        null=True,
+        blank=True,
     )
     vdpurl_source_file = models.CharField(
         max_length=200,
@@ -152,19 +154,9 @@ class VdpUrl(models.Model):
         return str(self.dealer)
 
     def save(self, *args, **kwargs):
-        # Auto-change  VdpImportSetup.setup
-        try:
-            self.date_created
-            objects = VdpImportSetup.objects.filter(
-                dealer__dealer_id=self.dealer.dealer_id
-            )
-            for object in objects:
-                object.setup = 'up'
-                object.save()
-        except VdpImportSetup.DoesNotExist:
-            # self.dealer.dealer_id does not exist here!
-            print('The dealer does not exist with that ID')
-
+        # Keep setup status in sync once at least one VDP URL exists for this dealer.
+        if self.dealer_id:
+            VdpImportSetup.objects.filter(dealer_id=self.dealer_id).update(setup='up')
         super(VdpUrl, self).save(*args, **kwargs)
 
 
@@ -195,7 +187,7 @@ class FtpConfig(models.Model):
     method = models.CharField(max_length=50, choices=METHOD, null=True, blank=True)
     feed_ids = models.TextField(
         null=True,
-        verbose_name='Feed Ids (comma-separted list values)',
+        verbose_name="Feed Ids (comma-separted list values; must match to a dealer's vdp import setup)",
         blank=True,
     )
     target_fields = models.CharField(

@@ -17,16 +17,30 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def get_env(name: str, default: str = '') -> str:
+    """Read an env var with an optional default value."""
+    return os.environ.get(name, default)
+
+
+def get_env_bool(name: str, default: bool = False) -> bool:
+    """Parse boolean env vars consistently across environments."""
+    return get_env(name, str(default)).strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-61+7^9g5cqlq6w!z!=4c%2q#g0ik$_eo+)8#egvkdy13^irq01'
+SECRET_KEY = get_env(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-change-me-in-production',
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = get_env_bool('DJANGO_DEBUG', True)
 
-ALLOWED_HOSTS = ['*']
+# Comma-separated values, e.g. "localhost,127.0.0.1,example.com".
+ALLOWED_HOSTS = [host.strip() for host in get_env('DJANGO_ALLOWED_HOSTS', '*').split(',') if host.strip()]
 
 
 # Application definition
@@ -89,12 +103,12 @@ WSGI_APPLICATION = 'vdpimporthelper.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'vdp',
-        'USER': 'admin',
-        'PASSWORD': 'admin',
-        'HOST': '127.0.0.1',
-        'PORT': '5432',
+        'ENGINE': get_env('DB_ENGINE', 'django.db.backends.postgresql'),
+        'NAME': get_env('DB_NAME', 'vdp'),
+        'USER': get_env('DB_USER', 'admin'),
+        'PASSWORD': get_env('DB_PASSWORD', 'admin'),
+        'HOST': get_env('DB_HOST', '127.0.0.1'),
+        'PORT': get_env('DB_PORT', '5432'),
     }
 }
 
@@ -158,5 +172,13 @@ JAZZMIN_UI_TWEAKS = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ==============[my backend logins]===================
-# testing321
+# Security settings that should be enabled in non-debug environments.
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = get_env_bool('DJANGO_SECURE_SSL_REDIRECT', True)
+    SECURE_HSTS_SECONDS = int(get_env('DJANGO_SECURE_HSTS_SECONDS', '31536000'))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = get_env_bool(
+        'DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS', True
+    )
+    SECURE_HSTS_PRELOAD = get_env_bool('DJANGO_SECURE_HSTS_PRELOAD', True)

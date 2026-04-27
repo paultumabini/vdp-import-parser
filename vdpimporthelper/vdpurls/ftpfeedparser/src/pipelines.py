@@ -1,10 +1,13 @@
 import csv
 import io
-import os
+import logging
+from pathlib import Path
 from ftplib import FTP
 from typing import Any, Dict, List
 
 from vdpurls.models import FtpConfig, VdpImportSetup, VdpUrl
+
+logger = logging.getLogger(__name__)
 
 
 class ImportSourcePipeline:
@@ -17,65 +20,60 @@ class ImportSourcePipeline:
 
     @staticmethod
     def process_item(provider_name: str, **kwargs: Dict[str, Any]) -> None:
-        # Initialize logs and counters
         logs: List[Dict[str, Any]] = []
 
         for labels, data in kwargs.get('_import_data', []):
+            if not data:
+                continue
+
             feed_id = labels.get('feed_id')
             dealer_name = labels.get('dealer_name')
             aim_id = labels.get('aim_id')
 
-            """Upload CSV to FTP."""
             try:
                 ImportSourcePipeline._upload_to_ftp(dealer_name, data)
-            except Exception as e:
-                print(f"FTP Error: {str(e)}")
-                continue
-
-            """Save to database."""
-            try:
                 ImportSourcePipeline._save_to_database(feed_id, aim_id, data)
-            except Exception as e:
-                print(f"Database Error: {str(e)}")
+                ImportSourcePipeline._update_vdp_import_setup(feed_id, dealer_name)
+                ImportSourcePipeline._log_process(logs, feed_id, dealer_name, aim_id)
+            except Exception as exc:
+                logger.exception(
+                    'Pipeline processing failed for provider=%s feed_id=%s',
+                    provider_name,
+                    feed_id,
+                )
                 continue
 
-            """Update VdpImportSetup."""
-            try:
-                ImportSourcePipeline._update_vdp_import_setup(feed_id, dealer_name)
-            except Exception as e:
-                print(f"Database Update Error: {str(e)}")
-
-            """Logging."""
-            ImportSourcePipeline._log_process(logs, feed_id, dealer_name, aim_id)
-
-        print('File upload success!')
-        print(
-            f'{provider_name.upper()} ({len(kwargs.get("_import_data", []))}): {logs}'
+        logger.info('File upload success!')
+        logger.info(
+            '%s (%s): %s',
+            provider_name.upper(),
+            len(kwargs.get('_import_data', [])),
+            logs,
         )
 
     @staticmethod
     def _upload_to_ftp(dealer_name: str, data: List[dict]) -> None:
-        """Connect to FTP server and upload CSV file."""
         fieldnames = data[0].keys()
         csvfile = io.StringIO()
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(data)
 
-        file = f'VDP_URLS_{dealer_name}.csv'
+        file_name = f'VDP_URLS_{dealer_name}.csv'
 
-        """Sending to `ftp.aim.autoverify.com`."""
-        ftp_dest_cred = [
-            entry for entry in FtpConfig.objects.values() if entry['provider_id'] == 42
-        ][0]
+        # Provider id 42 is reserved for the destination uploader account.
+        ftp_dest_cred = FtpConfig.objects.filter(provider_id=42).values().first()
+        if not ftp_dest_cred:
+            raise ValueError('Destination FTP config (provider_id=42) not found')
 
         with FTP(ftp_dest_cred['ftp_host']) as ftp:
             ftp.login(ftp_dest_cred['ftp_user'], ftp_dest_cred['ftp_pass'])
-            ftp.storbinary(f'STOR {file}', io.BytesIO(csvfile.getvalue().encode()))
+            ftp.storbinary(f'STOR {file_name}', io.BytesIO(csvfile.getvalue().encode()))
 
     @staticmethod
     def _save_to_database(feed_id: str, aim_id: str, data: List[dict]) -> None:
-        """Save to database (assuming VdpUrl model exists)."""
+        if not aim_id:
+            return
         for obj in data:
             VdpUrl.objects.create(
                 dealer_id=aim_id,
@@ -86,42 +84,33 @@ class ImportSourcePipeline:
 
     @staticmethod
     def _update_vdp_import_setup(feed_id: str, dealer_name: str) -> None:
-        """Update `VdpImportSetup` -> FTP Src File with source file if not already set."""
-        vdp_src_file = VdpImportSetup.objects.filter(vdpurl_feed_id=feed_id)
-        for obj in vdp_src_file:
+        for obj in VdpImportSetup.objects.filter(vdpurl_feed_id=feed_id):
             if not obj.vdpurl_source_file:
                 obj.vdpurl_source_file = f'VDP_URLS_{dealer_name}.csv'
-                obj.save()
+                obj.save(update_fields=['vdpurl_source_file'])
 
     @staticmethod
     def _log_process(
         logs: List[Dict[str, Any]], feed_id: str, dealer_name: str, aim_id: str
     ) -> None:
-
-        logs.append(
-            {'FEEDID': feed_id, 'FILE': f'VDP_URLS_{dealer_name}.csv', 'AIMID': aim_id}
-        )
+        logs.append({'FEEDID': feed_id, 'FILE': f'VDP_URLS_{dealer_name}.csv', 'AIMID': aim_id})
 
     @staticmethod
     def save_to_csv(provider_name: str, **kwargs: Dict[str, Any]) -> None:
-        """Save csv file."""
-        dir = '/home/pt/Dev/Projects/django/aim/vdp/output_csv/'
-        if not os.path.exists(dir):
-            os.mkdir(dir)
+        output_dir = Path('/home/pt/Dev/Projects/django/aim/vdp/output_csv')
+        output_dir.mkdir(parents=True, exist_ok=True)
 
         logs = []
         total_dealers = 0
 
         for labels, data in kwargs.get('_import_data', []):
+            if not data:
+                continue
             dealer_name = labels.get('dealer_name')
             fieldnames = data[0].keys()
+            output_file = output_dir / f'VDP_URLS_{provider_name}_{dealer_name}.csv'
 
-            with open(
-                f'{dir}VDP_URLS_{provider_name}_{dealer_name}.csv',
-                'w',
-                newline='',
-                encoding='utf-8',
-            ) as csvfile:
+            with output_file.open('w', newline='', encoding='utf-8') as csvfile:
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 writer.writeheader()
                 writer.writerows(data)
@@ -129,5 +118,5 @@ class ImportSourcePipeline:
             total_dealers += 1
             logs.append(f'{total_dealers}. VDP_URLS_{dealer_name}.csv')
 
-        print(f'[{provider_name.upper()}] ({total_dealers}):', logs)
-        print('Local csv files saved')
+        logger.info('[%s] (%s): %s', provider_name.upper(), total_dealers, logs)
+        logger.info('Local csv files saved')

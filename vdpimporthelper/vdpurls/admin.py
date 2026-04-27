@@ -2,11 +2,6 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 from django.utils.html import format_html
-from django_admin_listfilter_dropdown.filters import (
-    ChoiceDropdownFilter,
-    DropdownFilter,
-    RelatedDropdownFilter,
-)
 
 from .forms import FtpConfigForm
 from .models import Dealer, FtpConfig, Project, VdpImportSetup, VdpUrl, Webprovider
@@ -64,6 +59,7 @@ class DealerAdminView(admin.ModelAdmin):
 
     @admin.display(description='Status', ordering='account_status')
     def accnt_status(self, obj):
+        # Keep color mapping centralized for predictable admin UX.
         if obj.account_status == 'ACTIVE':
             color = '#28a745'
         elif obj.account_status == 'INACTIVE':
@@ -142,8 +138,10 @@ class VdpImportSetupAdminView(admin.ModelAdmin):
     ]
 
     # function to color the account status text
-    @admin.display(description='Status', ordering='dealer__account')
+    @admin.display(description='Status', ordering='dealer__account_status')
     def accnt_status(self, obj):
+        if not obj.dealer:
+            return ''
         if obj.dealer.account_status == 'ACTIVE':
             color = '#28a745'
         elif obj.dealer.account_status == 'INACTIVE':
@@ -158,18 +156,20 @@ class VdpImportSetupAdminView(admin.ModelAdmin):
 
     @admin.display(ordering='dealer__dealer_id')
     def did(self, obj):
-        return obj.dealer.pk
+        return obj.dealer.pk if obj.dealer else None
 
     # dealers and show site urls links
     @admin.display(description='Site', ordering='site_url')
     def dealer_site(self, obj):
+        if not obj.dealer or not obj.dealer.site_url:
+            return ''
         return format_html(
             f"<a href='{obj.dealer.site_url}' target='_blank'>{obj.dealer}</a>"
         )
 
     @admin.display(ordering='dealer__web_provider', description='Provider')
     def dealer_web_provider(self, obj):
-        return obj.dealer.web_provider
+        return obj.dealer.web_provider if obj.dealer else None
 
     # format date
     @admin.display(ordering='vdpurl_date_setup', description='Date_Setup')
@@ -189,17 +189,14 @@ class VdpImportSetupAdminView(admin.ModelAdmin):
 
     @admin.display(ordering='dealer__vdpurl__date_created', description='Last Run')
     def last_run(self, obj):
-        try:
-            return (
-                VdpUrl.objects.filter(dealer__dealer_id=obj.dealer.dealer_id)
-                .first()
-                .date_created.strftime("%Y-%m-%d")
-            )
-
-        except Exception as e:
-            return format_html(
-                f'<strong> <p style="color:#ff0000">Error: {e}</p> </strong>'
-            )
+        if not obj.dealer:
+            return ''
+        latest_vdp = (
+            VdpUrl.objects.filter(dealer__dealer_id=obj.dealer.dealer_id)
+            .order_by('-date_created')
+            .first()
+        )
+        return latest_vdp.date_created.strftime("%Y-%m-%d") if latest_vdp else ''
 
     # sort dealer's dropdown
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
@@ -278,22 +275,20 @@ class VdpUrlConfigView(admin.ModelAdmin):
 
     @admin.display(ordering='provider')
     def provider_name(self, obj):
-        return f'{obj.provider.name}'
+        return obj.provider.name if obj.provider else ''
 
-    def save_model(self, request, obj, form, change):
-        # if the object is being changed (not created)
-        # if change:
+    def save_model(self, request, obj, form, change):  # `change`(not created)
+        """This part pulls the id(s) from `VdpImportSetup` through a queried `web_provider`."""
 
-        if not obj.feed_ids:
-            provider = VdpImportSetup.objects.filter(
+        if not obj.feed_ids and obj.provider:
+            provider_setups = VdpImportSetup.objects.filter(
                 dealer__web_provider__name__iexact=str(obj.provider),
-                dealer__account__iexact='active',
-            ).all()
-            feed_ids = list(
-                set([id.vdpurl_feed_id for id in provider if bool(id.vdpurl_feed_id)])
-            )
+                dealer__account_status__iexact='active',
+            ).values_list('vdpurl_feed_id', flat=True)
+            # Deduplicate and keep ordering stable for easier admin diffing.
+            feed_ids = sorted({feed_id for feed_id in provider_setups if feed_id})
             obj.feed_ids = ','.join(feed_ids)
-            obj.save()
+        # Always defer persistence to admin's save flow.
         super(VdpUrlConfigView, self).save_model(request, obj, form, change)
 
 
