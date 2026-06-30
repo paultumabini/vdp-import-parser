@@ -1,7 +1,5 @@
 from django.db.models import F
-
 from vdpurls.models import FtpConfig
-
 
 IGNORED_PROVIDERS = {
     'autoverify',
@@ -15,7 +13,7 @@ IGNORED_PROVIDERS = {
 }
 
 
-def get_config():
+def get_config() -> list[dict]:
     """Build normalized FTP parser configurations from DB records."""
     ftp_config_fields = [field.name for field in FtpConfig._meta.get_fields()]
     ftp_config_fields.append('provider_name')

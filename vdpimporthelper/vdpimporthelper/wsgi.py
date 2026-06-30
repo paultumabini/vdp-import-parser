@@ -1,5 +1,5 @@
 """
-WSGI config for vdpimporthelper project.
+WSGI config for VDP Direct Feed Import (internal package: vdpimporthelper).
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 

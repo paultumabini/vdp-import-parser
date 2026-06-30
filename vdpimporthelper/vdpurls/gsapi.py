@@ -120,7 +120,8 @@ def to_vdp_import_setup(values):
             defaults={
                 'vdpurl_status': obj.get('vdpurl_status'),
                 'vdpurl_feed_id': obj.get('vdpurl_feed_id'),
-                'vdpurl_source_file': obj.get('vdpurl_source_file'),
+                'exported_feed': obj.get('exported_feed')
+                or obj.get('vdpurl_source_file'),
                 'vdpurl_main_feed_src': obj.get('vdpurl_main_feed_src'),
                 'vdpurl_data_provider': obj.get('vdpurl_data_provider'),
                 'vdpurl_date_setup': obj.get('vdpurl_date_setup'),

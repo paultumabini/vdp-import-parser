@@ -1,10 +1,12 @@
-# VDP Import Helper
+# VDP Direct Feed Import
 
-Django-based tooling for importing vehicle detail page (VDP) URLs from multiple provider FTP feeds, normalizing records, and exporting results for downstream use.
+Django-based tooling for importing vehicle detail page (VDP) URLs from provider FTP feeds (direct feed path), normalizing records, and exporting results for downstream use.
+
+This project is the legacy direct-feed import companion to **vdp-urls-scraper**; naming and concepts align with that platform's `DIRECT_FEED` supply path.
 
 ## What This Project Does
 
-- Manages dealer and VDP setup records in Django admin.
+- Manages dealer and direct-feed setup records in Django admin.
 - Pulls source files from provider FTP endpoints.
 - Parses CSV/XML feed formats into a normalized schema.
 - Uploads generated provider output files to a destination FTP.
@@ -13,17 +15,17 @@ Django-based tooling for importing vehicle detail page (VDP) URLs from multiple 
 
 ## Tech Stack
 
-- Python 3.11
-- Django 4.1
+- Python 3.11+
+- Django 6
 - PostgreSQL
 - Pandas / xmltodict
 
 ## Project Layout
 
-- `vdpimporthelper/` - Django project root (`manage.py`, settings, templates, apps)
-- `vdpimporthelper/vdpurls/` - main app (models, admin, FTP pipeline, scripts)
-- `vdpimporthelper/vdpurls/ftpfeedparser/` - feed ingestion pipeline
-- `output_csv/` - generated local CSV output from pipeline runs
+- `vdpimporthelper/` — Django project root (`manage.py`, settings, templates, apps). Internal package name unchanged for compatibility.
+- `vdpimporthelper/vdpurls/` — main app (models, admin, scripts)
+- `vdpimporthelper/vdpurls/direct_feed_import/` — FTP direct feed import pipeline
+- `output_csv/` — generated local CSV output from pipeline runs
 
 ## Quick Start
 
@@ -79,11 +81,11 @@ From `vdpimporthelper/`:
 - Tests: `../venv/bin/python manage.py test vdpurls -v 1`
 - Create superuser: `python manage.py createsuperuser`
 
-## FTP Import Pipeline
+## Direct Feed Import Pipeline
 
 Run from `vdpimporthelper/`:
 
-- `../venv/bin/python vdpurls/ftpfeedparser/ftpscript.py`
+- `../venv/bin/python vdpurls/direct_feed_import/run_direct_feed_import.py`
 
 What happens:
 

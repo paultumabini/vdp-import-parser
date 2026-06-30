@@ -1,85 +1,303 @@
-.nav-link.active i.nav-icon {
-  color: #00ff00;
+/* -----------------------------------------------------------------------------
+ * VDP Direct Feed Import — Jazzmin admin polish (JAZZMIN_SETTINGS custom_css).
+ *
+ * Also styles workarounds for django-jazzmin 3.0.2 + Bootstrap 5:
+ * - Account menu uses <details> in templates/admin/base.html (not BS dropdown).
+ * - Change-form tabs toggled via admin-extra.js (not data-bs-toggle).
+ * ----------------------------------------------------------------------------- */
+
+:root {
+  --sb-admin-accent: #2563eb;
+  --sb-admin-accent-soft: rgba(37, 99, 235, 0.08);
+  --sb-admin-surface: #ffffff;
+  --sb-admin-border: #e8ecf1;
+  --sb-admin-text: #1e293b;
+  --sb-admin-text-muted: #64748b;
+  --sb-admin-hover: #f8fafc;
+  --sb-account-active: #16a34a;
+  --sb-account-inactive: #94a3b8;
+  --sb-account-deleted: #475569;
+  --sb-radius-sm: 6px;
+  --sb-radius-pill: 999px;
+  --sb-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
-/* status */
+/* ----- Changelist table ---------------------------------------------------- */
+
+.change-list .card {
+  border: 1px solid var(--sb-admin-border);
+  border-radius: 10px;
+  box-shadow: var(--sb-shadow-sm);
+  overflow: hidden;
+}
+
+.change-list #result_list {
+  margin-bottom: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.change-list #result_list thead th {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid var(--sb-admin-border);
+  color: var(--sb-admin-text-muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 0.65rem 0.75rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.change-list #result_list tbody td {
+  border-bottom: 1px solid #f1f5f9;
+  color: var(--sb-admin-text);
+  font-size: 0.875rem;
+  padding: 0.6rem 0.75rem;
+}
+
+.change-list #result_list tbody tr:hover td {
+  background-color: var(--sb-admin-hover);
+}
+
+.change-list #result_list tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.change-list #result_list a {
+  color: var(--sb-admin-accent);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.change-list #result_list a:hover {
+  text-decoration: underline;
+}
+
+.change-list #result_list th,
+.change-list #result_list td {
+  vertical-align: middle;
+}
+
+/* ----- VdpImportSetup setup status pills ----------------------------------- */
+
 .status.active,
 .status.inactive,
 .status.pending,
 .status.failed {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 0.68rem;
+  font-weight: 600;
   color: #fff;
-  border-radius: 4px;
+  border-radius: var(--sb-radius-pill);
+  box-shadow: var(--sb-shadow-sm);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .status.active {
-  background: linear-gradient(310deg, #11a030 0%, #92e22c 100%);
-  padding: 0.2rem 0.77rem;
+  background: linear-gradient(135deg, #15803d 0%, #22c55e 100%);
+  padding: 0.22rem 0.65rem;
 }
 
 .status.inactive {
-  background: linear-gradient(310deg, #627594 0%, #a8b8d8 100%);
-  padding: 0.2rem 0.45rem;
+  background: linear-gradient(135deg, #475569 0%, #94a3b8 100%);
+  padding: 0.22rem 0.5rem;
 }
 
 .status.failed {
-  background: linear-gradient(310deg, #b82121 0%, #ff6666 100%);
-  padding: 0.2rem 0.77rem;
+  background: linear-gradient(135deg, #b91c1c 0%, #ef4444 100%);
+  padding: 0.22rem 0.65rem;
 }
 
 .status.pending {
-  background: linear-gradient(310deg, #c34f24 0%, #ff9670 100%);
-  padding: 0.2rem 0.45rem;
+  background: linear-gradient(135deg, #c2410c 0%, #fb923c 100%);
+  padding: 0.22rem 0.5rem;
 }
 
 .status.up {
-  background: linear-gradient(310deg, #11a030 0%, #92e22c 100%);
-  padding: 0.2rem 1.6rem;
-  border-radius: 5px;
+  background: linear-gradient(135deg, #15803d 0%, #22c55e 100%);
+  padding: 0.22rem 1.6rem;
+  border-radius: var(--sb-radius-pill);
   color: #fff;
   font-weight: 600;
   text-transform: uppercase;
 }
+
 .status.down {
-  background: linear-gradient(310deg, #b82121 0%, #ff6666 100%);
-  padding: 0.2rem 0.9rem;
-  border-radius: 5px;
+  background: linear-gradient(135deg, #b91c1c 0%, #ef4444 100%);
+  padding: 0.22rem 0.9rem;
+  border-radius: var(--sb-radius-pill);
   color: #fff;
   font-weight: 600;
   text-transform: uppercase;
 }
 
 .status.moved {
-  background: linear-gradient(310deg, #ab00c1 0%, #ff72ff 100%);
-  padding: 0.2rem 0.77rem;
-  border-radius: 5px;
+  background: linear-gradient(135deg, #7e22ce 0%, #c084fc 100%);
+  padding: 0.22rem 0.77rem;
+  border-radius: var(--sb-radius-pill);
   color: #fff;
   font-weight: 600;
   text-transform: uppercase;
 }
+
 .status.dead {
-  background: linear-gradient(310deg, #627594 0%, #a8b8d8 100%);
-  padding: 0.2rem 1.1rem;
-  border-radius: 5px;
+  background: linear-gradient(135deg, #475569 0%, #94a3b8 100%);
+  padding: 0.22rem 1.1rem;
+  border-radius: var(--sb-radius-pill);
   color: #fff;
   font-weight: 600;
   text-transform: uppercase;
 }
 
-/* profile image */
-/* .user-panel .image {
-  position: relative;
-  margin-left: 0.8rem;
-  overflow: hidden;
-  height: 34px;
-  border-radius: 50%;
-  width: 34px;
-  padding-left: unset;
+/*
+ * VdpImportSetup exported feed — ``display_exported_feed`` in admin (not editable).
+ * --empty: no FTP export yet (null ``exported_feed``).
+ * --set:   monospace chip for the last VDP_URLS_*.csv filename from the pipeline.
+ */
+.exported-feed-pill {
+  border-radius: var(--sb-radius-sm);
+  display: inline-block;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  max-width: 100%;
+  vertical-align: middle;
+  word-break: break-all;
 }
 
-.user-panel .image img {
-  height: 100%;
-  width: 100%;
-  object-fit: cover;
-} */
+.exported-feed-pill--empty {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  color: var(--sb-admin-text-muted);
+  font-style: italic;
+  min-width: 5.5rem;
+  padding: 0.3rem 0.6rem;
+  text-align: center;
+}
+
+.exported-feed-pill--set {
+  background: var(--sb-admin-accent-soft);
+  border: 1px solid rgba(37, 99, 235, 0.22);
+  color: #1d4ed8;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 0.32rem 0.6rem;
+}
+
+.form-row .readonly .exported-feed-pill {
+  margin-top: 0.15rem;
+}
+
+.form-row .readonly .exported-feed-pill--empty {
+  display: inline-block;
+  min-width: 8rem;
+  text-align: left;
+}
+
+/* ----- Sidebar (Jazzmin / AdminLTE) ---------------------------------------- */
+
+.main-sidebar .nav-sidebar > .nav-item > .nav-link.active {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-left: 3px solid var(--sb-account-active);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  color: #fff !important;
+}
+
+.main-sidebar .nav-sidebar > .nav-item > .nav-link.active i.nav-icon {
+  color: #fff !important;
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
+}
+
+.main-sidebar .nav-sidebar > .nav-item > .nav-link.active p {
+  color: #fff !important;
+  font-weight: 600;
+}
+
+.main-sidebar .nav-sidebar .nav-treeview > .nav-item > .nav-link.active {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border-left: 3px solid var(--sb-account-active);
+  color: #f8fafc !important;
+}
+
+.main-sidebar .nav-sidebar .nav-treeview > .nav-item > .nav-link.active i.nav-icon {
+  color: #f8fafc !important;
+}
+
+.change-list #changelist-search {
+  border-radius: var(--sb-radius-sm);
+}
+
+.change-list .actions select {
+  border-radius: var(--sb-radius-sm);
+}
+
+/* ----- Sidebar .user-panel avatar (static me.png in admin/base.html) ---------- */
+
+.main-sidebar .user-panel .image img {
+  height: 2.125rem;
+  width: 2.125rem;
+}
+
+/* Account menu: native <details> — BS5/AdminLTE break data-bs-toggle dropdowns */
+#jazzy-navbar .jazzy-user-menu {
+  position: relative;
+}
+
+#jazzy-navbar .jazzy-user-details {
+  position: relative;
+}
+
+#jazzy-navbar .jazzy-user-details > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+#jazzy-navbar .jazzy-user-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+#jazzy-navbar .jazzy-account-panel {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 0.25rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  display: none;
+  min-width: 14rem;
+  padding: 0.5rem 0;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 1050;
+}
+
+#jazzy-navbar .jazzy-user-details[open] .jazzy-account-panel {
+  display: block;
+}
+
+#jazzy-logout-link {
+  cursor: pointer;
+}
+
+#jazzy-logout-link:hover {
+  background-color: #f8f9fa;
+  color: #16181b;
+}
+
+/* Change-form tabs: visibility driven by admin-extra.js activateJazzyTab() */
+#jazzy-tabs .nav-link {
+  cursor: pointer;
+}
+
+#jazzy-tabs .nav-link.active {
+  font-weight: 600;
+}
+
+.change-form .tab-content > .tab-pane {
+  display: none;
+}
+
+.change-form .tab-content > .tab-pane.active.show {
+  display: block;
+}

@@ -1,3 +1,4 @@
+from typing import Any
 from django.contrib.auth.models import User
 from django.db import models
 
@@ -110,12 +111,11 @@ class VdpImportSetup(models.Model):
         null=True,
         blank=True,
     )
-    vdpurl_source_file = models.CharField(
-        max_length=200,
-        verbose_name='FTP Src File',  # automatically updated value in pipelines
-        null=True,
-        blank=True,
-    )
+    # Last successful FTP CSV filename (e.g. VDP_URLS_norlanchrysler.csv).
+    # Set by ImportSourcePipeline after STOR; null until the first export.
+    exported_feed = models.CharField(max_length=200, blank=True, null=True)
+    # VdpUrl rows from the dealer's most recent import run (same day as latest row).
+    vdp_url_count = models.IntegerField(null=True, blank=True)
     vdpurl_main_feed_src = models.CharField(
         max_length=200, verbose_name='Main Feed Src', null=True, blank=True
     )
@@ -140,6 +140,48 @@ class VdpImportSetup(models.Model):
         # Solution for error msg: Error in admin: __str__ returned non-string (type NoneType)
         return str(self.dealer) or ''
 
+    @classmethod
+    def sync_vdp_url_count(cls, dealer_id: int | None) -> None:
+        # Persist recent-run count on setup; called by pipeline and VdpUrl save/delete.
+        if not dealer_id:
+            return
+        count = VdpUrl.recent_count_for_dealer(dealer_id)
+        cls.objects.filter(dealer_id=dealer_id).update(vdp_url_count=count)
+
+    @classmethod
+    def sync_all_vdp_url_counts(cls) -> int:
+        # Bulk refresh (2 aggregate queries + 1 bulk_update) for admin sort accuracy.
+        from django.db.models import Count, Max
+        from django.db.models.functions import TruncDate
+
+        latest_by_dealer = dict(
+            VdpUrl.objects.exclude(dealer_id=None)
+            .values('dealer_id')
+            .annotate(latest=Max('date_created'))
+            .values_list('dealer_id', 'latest')
+        )
+        run_counts = {
+            (dealer_id, run_date): cnt
+            for dealer_id, run_date, cnt in (
+                VdpUrl.objects.annotate(run_date=TruncDate('date_created'))
+                .values('dealer_id', 'run_date')
+                .annotate(cnt=Count('pk'))
+                .values_list('dealer_id', 'run_date', 'cnt')
+            )
+        }
+        setups = list[Any](cls.objects.exclude(dealer_id=None))
+        for setup in setups:
+            latest = latest_by_dealer.get(setup.dealer_id)
+            if latest is None:
+                setup.vdp_url_count = 0
+            else:
+                setup.vdp_url_count = run_counts.get(
+                    (setup.dealer_id, latest.date()), 0
+                )
+        if setups:
+            cls.objects.bulk_update(setups, ['vdp_url_count'])
+        return len(setups)
+
 
 class VdpUrl(models.Model):
     dealer = models.ForeignKey(
@@ -153,15 +195,39 @@ class VdpUrl(models.Model):
     def __str__(self):
         return str(self.dealer)
 
+    @classmethod
+    def recent_count_for_dealer(cls, dealer_id: int | None) -> int:
+        # Count rows from the latest import day, not cumulative history across runs.
+        if not dealer_id:
+            return 0
+        latest = (
+            cls.objects.filter(dealer_id=dealer_id).order_by('-date_created').first()
+        )
+        if latest is None or latest.date_created is None:
+            return 0
+        run_date = latest.date_created.date()
+        return cls.objects.filter(
+            dealer_id=dealer_id,
+            date_created__date=run_date,
+        ).count()
+
     def save(self, *args, **kwargs):
         # Keep setup status in sync once at least one VDP URL exists for this dealer.
         if self.dealer_id:
             VdpImportSetup.objects.filter(dealer_id=self.dealer_id).update(setup='up')
         super(VdpUrl, self).save(*args, **kwargs)
+        if self.dealer_id:
+            VdpImportSetup.sync_vdp_url_count(self.dealer_id)
+
+    def delete(self, *args, **kwargs):
+        dealer_id = self.dealer_id
+        super().delete(*args, **kwargs)
+        # Recompute recent-run count when rows are removed via admin or scripts.
+        if dealer_id:
+            VdpImportSetup.sync_vdp_url_count(dealer_id)
 
 
 class FtpConfig(models.Model):
-
     METHOD = (
         ('parse_xml_edealer', 'parse_xml_edealer'),
         ('parse_csv', 'parse_csv'),
@@ -187,7 +253,7 @@ class FtpConfig(models.Model):
     method = models.CharField(max_length=50, choices=METHOD, null=True, blank=True)
     feed_ids = models.TextField(
         null=True,
-        verbose_name="Feed Ids (comma-separted list values; must match to a dealer's vdp import setup)",
+        verbose_name="Feed Ids (comma-separated list; must match a dealer's direct feed setup)",
         blank=True,
     )
     target_fields = models.CharField(

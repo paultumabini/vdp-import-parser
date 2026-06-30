@@ -1,5 +1,5 @@
 """
-ASGI config for vdpimporthelper project.
+ASGI config for VDP Direct Feed Import (internal package: vdpimporthelper).
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
